@@ -13,6 +13,12 @@ Laravel 13 API for the Next.js frontend. Authentication uses Laravel's web sessi
 
 The `users`, `password_reset_tokens`, and `sessions` tables are managed by migrations. Password-reset tokens are hashed, expire according to Laravel's password broker settings, and are deleted after successful use. Configure a real email provider before relying on password recovery; the default Laravel `log` mailer does not deliver email.
 
+## Verify production database connectivity
+
+The temporary `GET /api/diagnostics/database` endpoint runs only `SELECT 1` through Laravel's configured default connection. It returns a generic success or failure message and requires the `X-Database-Diagnostic-Token` request header. Set `DB_DIAGNOSTIC_TOKEN` in Render to a long, random secret using Render's environment dashboard; never put the real token in this file, source control, or a URL. The endpoint bypasses session startup so the diagnostic still works when the database-backed session store cannot connect.
+
+For the existing Supabase setup, verify Render has `DB_CONNECTION=pgsql`, `DB_HOST=aws-0-ap-northeast-1.pooler.supabase.com`, `DB_PORT=5432`, `DB_DATABASE=postgres`, `DB_USERNAME=postgres.dcctuqpldwhgqjbipzdd`, `DB_PASSWORD` set to the Supabase database password, `DB_SCHEMA=public`, and `DB_SSLMODE=require`. Redeploy after setting the variables if Render does not restart the service automatically. Once this change is deployed, send a GET request to `https://<render-service-host>/api/diagnostics/database` with the secret in the `X-Database-Diagnostic-Token` header. Do not put the token in the query string. After confirming connectivity, unset `DB_DIAGNOSTIC_TOKEN` in Render and remove this temporary route and its tests.
+
 ## API routes
 
 - `POST /api/register`
@@ -27,6 +33,7 @@ The `users`, `password_reset_tokens`, and `sessions` tables are managed by migra
 - `POST /api/mfa/setup`, `POST /api/mfa/enable`, and `POST /api/mfa/disable`
 - `GET /api/weather?lat=...&lon=...`
 - `POST /api/maps/search` with a `query`
+- `GET /api/diagnostics/database` (temporary, secret-header protected connectivity check)
 
 The frontend origin is controlled by `FRONTEND_URL`. For local development, use `http://localhost:3000` and `http://localhost:8000` consistently; do not mix `localhost` and `127.0.0.1`. The CSRF endpoint returns the token in JSON for the exact CORS-authorized frontend origin so the browser does not need JavaScript access to an API-host cookie. Production must use HTTPS, a trusted frontend origin, and secure cookie settings.
 

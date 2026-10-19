@@ -4,12 +4,37 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\MfaController;
 use App\Http\Controllers\WeatherController;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/api/diagnostics/database', function (Request $request) {
+    $configuredToken = (string) config('services.database_diagnostic.token');
+    $providedToken = (string) $request->header('X-Database-Diagnostic-Token', '');
+
+    if ($configuredToken === '' || ! hash_equals($configuredToken, $providedToken)) {
+        abort(404);
+    }
+
+    try {
+        DB::select('SELECT 1');
+    } catch (Throwable) {
+        return response()->json(['message' => 'Database connection failed.'], 503);
+    }
+
+    return response()->json(['message' => 'Database connection successful.']);
+})->withoutMiddleware([
+    PreventRequestForgery::class,
+    ShareErrorsFromSession::class,
+    StartSession::class,
+]);
 
 Route::prefix('api')->group(function (): void {
     Route::get('/csrf-cookie', [AuthController::class, 'csrfCookie']);
