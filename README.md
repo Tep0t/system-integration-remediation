@@ -153,7 +153,7 @@ Protected account, MFA management, weather, and map endpoints require a Laravel 
 - Session cookies are HttpOnly, sessions are encrypted by default, production cookies are Secure, and production HTTP requests are rejected. When a proxy terminates HTTPS, configure `TRUSTED_PROXIES` narrowly so forwarded HTTPS is trusted only from that proxy.
 - Weather keys remain server-side. Nominatim requires a meaningful identifying User-Agent and is globally rate-limited; follow its usage policy and switch providers if intended traffic exceeds its public-service limits. The map includes OpenStreetMap attribution.
 - Live Supabase migrations/connectivity, actual SMTP delivery, valid provider keys, and deployed cookie/CORS behavior still require manual configuration and end-to-end testing.
-- The frontend dependency audit reported five **high-severity development-tool dependency findings** in the ESLint/Next lint chain. The production-only audit reported zero vulnerabilities. The available npm suggested fix would downgrade `eslint-config-next` to 14.2.35, so it was not applied because that conflicts with the installed Next.js 16 application. Re-check and upgrade the compatible dependency chain before production.
+- The frontend dependency audit reported five **high-severity development-tool dependency findings** in the ESLint/Next lint chain. The production-only audit reported zero vulnerabilities. The installed Next.js and `eslint-config-next` 16.4.2 are the newest matching versions available in the registry. `npm audit fix --dry-run` proposed no changes other than downgrading `eslint-config-next` to 14.2.35, which is incompatible with this Next.js 16 app. The affected chain resolves to `fast-glob` 3.3.1 and `braces` 3.0.3; the registry has no `braces` 3.0.4 release. No unsafe downgrade or override was applied. Re-check the audit after compatible upstream releases become available and before production.
 
 ## Tests and checks
 
@@ -191,6 +191,13 @@ Results for this Step 3 validation: **25 backend tests passed (150 assertions); 
 ## Deployment preparation
 
 No deployment has been performed. Vercel access is available, but no Vercel project is linked for this app. A backend hosting provider has not been selected or authenticated. Production secrets, Supabase credentials, domains/DNS, and API provider configuration are not available in this workspace. The GitHub repository is available at [Tep0t/system-integration-remediation](https://github.com/Tep0t/system-integration-remediation).
+
+| Service | Status | URL |
+| --- | --- | --- |
+| GitHub source | Published | <https://github.com/Tep0t/system-integration-remediation> |
+| Frontend (Vercel) | Not deployed | None verified |
+| Backend API | Not deployed | None verified |
+| Database | Supabase is configured as a template only | No live connection verified |
 
 ### Frontend — Vercel
 
@@ -238,12 +245,13 @@ Explain these code areas during the demo: authentication and CSRF/session endpoi
 - `map_search_not_configured` means `MAPS_USER_AGENT` needs a valid contact email. `map_search_unavailable` indicates a provider/network error. Respect Nominatim's usage limits.
 - Password reset will not deliver email with `MAIL_MAILER=log`; configure a real SMTP provider and test with a disposable account.
 - For a database connection failure, verify the backend-only PostgreSQL host, port, database, username, password, TLS mode, and `pdo_pgsql`. Do not paste credentials into logs or issue reports.
-- Save genuine evidence under a local `evidence/` folder (not credentials, `.env`, reset links, MFA secrets/recovery codes, or session cookies). Suggested captures: registration, authenticated dashboard, MFA challenge (with codes hidden), provider results only when real, and logout/protected-route denial. Record the test date and whether each service was local or deployed. No evidence screenshots have been created for this work.
+- Save genuine evidence under a local `evidence/` folder (ignored by Git; not credentials, `.env`, reset links, MFA secrets/recovery codes, or session cookies). Suggested captures: registration, authenticated dashboard, MFA challenge (with codes hidden), provider results only when real, and logout/protected-route denial. Record the test date and whether each service was local or deployed. No evidence screenshots have been created for this work.
 
 ## Final readiness checklist
 
 - **Complete locally:** Laravel/Next.js code, session/CSRF authentication, password recovery implementation, TOTP MFA and recovery codes, weather/maps server endpoints and UI, security checks, migration definitions, environment templates, documentation, automated test/build/lint checks, and a local registration/login/logout browser smoke test.
-- **Partially complete:** GitHub publication, deployment configuration, and demo preparation; the source is published, but no hosting target has been selected or deployed.
+- **Complete:** project source published to GitHub; local backend/frontend checks and local authentication smoke test passed.
+- **Partially complete:** deployment configuration and demo preparation; instructions are ready, but no frontend/backend hosting project is linked or deployed. The Vercel account has other projects but none for this app; no PHP backend host is selected or authenticated.
 - **Blocked pending credentials/account access:** Supabase PostgreSQL connection and production migration, SMTP email delivery, OpenWeatherMap live data, and provider-backed browser testing.
 - **Still needs manual verification:** production DNS/HTTPS, trusted proxy addresses, cross-site cookie/CORS behavior on the actual deployment domains, production session/cache setup, recovery email delivery, MFA enrollment/challenge/recovery in a browser, weather/maps with real providers and location permission, review/remediation of high-severity development dependency findings, and end-to-end demo on deployed services. No verified frontend or backend deployment URL is available yet.
 

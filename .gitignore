@@ -32,6 +32,7 @@ backend/storage/framework/views/
 backend/bootstrap/cache/
 
 # Project artifacts
+evidence/
 screenshots/*.png
 screenshots/*.jpg
 screenshots/*.jpeg
