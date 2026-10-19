@@ -20,7 +20,7 @@ flowchart LR
 
 ## Request flow
 
-Next.js App Router -> Laravel 13 REST API -> PostgreSQL (Supabase is the planned hosted database)
+Next.js App Router -> Laravel 13 REST API -> PostgreSQL (Supabase project created; connection pending password)
 
 Laravel owns authentication, validation, password hashing, session management, password recovery, MFA, and database access. It also makes server-side weather and place-search requests. The frontend sends requests with credentials to the API and never receives database credentials or the weather key.
 
@@ -43,4 +43,4 @@ Laravel owns authentication, validation, password hashing, session management, p
 
 ## Verification status
 
-Automated tests, lint, frontend production build, and a local registration/login/logout browser smoke test are verified locally. The MFA and provider integrations have automated tests but were not exercised in a browser against real services. Live Supabase connectivity, production email, external provider credentials, and deployed cookie/CORS behavior remain unverified until configured and exercised. See [the API reference](api.md) for endpoint and sample-request details.
+Automated tests, lint, frontend production build, and a local registration/login/logout browser smoke test are verified locally. The MFA and provider integrations have automated tests but were not exercised in a browser against real services. The Supabase project exists and non-secret connection values are configured, but no database password was available, so connectivity and migrations remain unverified. Production email, external provider credentials, and deployed cookie/CORS behavior also remain unverified until configured and exercised. See [the API reference](api.md) for endpoint and sample-request details.

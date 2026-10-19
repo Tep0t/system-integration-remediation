@@ -4,7 +4,7 @@ A student project that connects a Next.js browser app to a Laravel REST API and 
 
 ## Project status
 
-The application code and automated checks are prepared locally. A localhost browser smoke test verified registration, an authenticated dashboard session, logout, login, and logout again against Laravel. Supabase, SMTP, OpenWeatherMap, production hosting, DNS, and provider-backed browser flows remain unverified because this workspace has no valid service credentials or deployment account configuration. See the final checklist below before presenting or deploying.
+The application code and automated checks are prepared locally. A localhost browser smoke test verified registration, an authenticated dashboard session, logout, login, and logout again against Laravel. The Supabase project is now created and its non-secret PostgreSQL connection settings are in the backend template and local ignored `.env`, but the database password is not configured, so connectivity and migrations remain unverified. SMTP, OpenWeatherMap, production hosting, DNS, and provider-backed browser flows also remain unverified. See the final checklist below before presenting or deploying.
 
 ## Technology and folders
 
@@ -21,7 +21,7 @@ The frontend's original Git metadata is preserved separately at `C:\Users\user\D
 flowchart LR
     Browser["Browser<br/>Next.js JavaScript App Router"]
     API["Laravel 13 REST API<br/>session auth, CSRF, validation"]
-    DB[("PostgreSQL<br/>Supabase planned")]
+    DB[("PostgreSQL<br/>Supabase project created; connection pending")]
     Weather["OpenWeatherMap"]
     Places["Nominatim / OpenStreetMap"]
     Mail["SMTP provider"]
@@ -33,7 +33,7 @@ flowchart LR
     API -->|"password reset email"| Mail
 ```
 
-Laravel owns session authentication, authorization, database access, and private provider requests. PostgreSQL/Supabase, SMTP, and provider-backed requests require deployment credentials and have not been verified live. See [docs/architecture.md](docs/architecture.md) and [docs/api.md](docs/api.md) for the request flow, security decisions, and API examples.
+Laravel owns session authentication, authorization, database access, and private provider requests. The Supabase project exists and its non-secret connection settings are configured, but the password is missing so PostgreSQL is not yet connected. SMTP and weather/provider-backed requests also require credentials and have not been verified live. See [docs/architecture.md](docs/architecture.md), [docs/api.md](docs/api.md), and [docs/database-plan.md](docs/database-plan.md) for details.
 
 ## Prerequisites
 
@@ -90,25 +90,21 @@ composer install
 
 Copy `.env.example` only if `backend\.env` does not exist. Keep the existing `APP_KEY`; do not generate a new key over an existing one. If a new backend installation has an empty `APP_KEY`, run `php artisan key:generate` once, then keep that key stable.
 
-Set the backend values listed below in the ignored `backend\.env`. The provided local `.env` currently selects SQLite and the log mailer; it does not have Supabase, email, weather, or a Nominatim contact configured. Do not run migrations until the database target and credentials have been checked. For the existing local SQLite configuration, run migrations only after confirming that local database is the intended target:
+The ignored `backend\.env` has been configured for the Supabase PostgreSQL host, database, username, schema, and TLS mode provided for this project. Its `DB_PASSWORD` is blank because no password was available in the local environment. Open `backend\.env` locally and enter the database password on that line; do not paste it into chat or commit the file. Local email, weather, and Nominatim contact settings are still placeholders. No Supabase connection test or migration has been run. You explicitly asked not to run database commands, so do not run a migration as part of this setup step.
 
-```powershell
-$php = 'C:\Users\user\Downloads\php-8.5.11-nts-Win32-vs17-x64\php.exe'
-$ext = 'C:\Users\user\Downloads\php-8.5.11-nts-Win32-vs17-x64\ext'
-& $php -d "extension_dir=$ext" -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll artisan migrate
-```
+When you later approve a migration, first confirm the password, selected Supabase project, backup/target, and successful read-only connectivity check. Then run migrations only if the destination is confirmed and intentionally empty or approved for schema changes. Do not use `migrate:fresh` against a database with data.
 
-For PostgreSQL, enable and verify `pdo_pgsql` in the PHP CLI and run `& $php artisan migrate` only against a confirmed disposable or approved local database. **Do not use `migrate:fresh` against a database with data.**
+After entering the password, the no-query PDO connection check is documented in [docs/database-plan.md](docs/database-plan.md). It tests connectivity without running `artisan db`, a SQL query, or a migration. Do not proceed to schema changes until the target is confirmed and approved.
 
 Start the API in this second window:
 
 ```powershell
 $php = 'C:\Users\user\Downloads\php-8.5.11-nts-Win32-vs17-x64\php.exe'
 $ext = 'C:\Users\user\Downloads\php-8.5.11-nts-Win32-vs17-x64\ext'
-& $php -d "extension_dir=$ext" -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll -S localhost:8000 -t public public\index.php
+& $php -S localhost:8000 -t public public\index.php
 ```
 
-The API is then available at `http://localhost:8000/api`. The direct PHP server command loads the SQLite DLLs for this process; this extracted PHP's default CLI configuration does not load them, and `artisan serve` starts a child PHP process that does not inherit process-only extension flags. If SQLite is enabled in PHP's `php.ini`, the usual `php artisan serve --host=localhost --port=8000` command can be used instead. Leave both development servers running in their separate terminals.
+The API is then available at `http://localhost:8000/api`. For tests using the configured in-memory SQLite test database, enable the PHP SQLite DLLs for that test process as shown in the test commands below. Leave both development servers running in their separate terminals.
 
 ### Backend environment variables
 
@@ -117,16 +113,16 @@ The API is then available at `http://localhost:8000/api`. The direct PHP server 
 | `APP_ENV`, `APP_DEBUG`, `APP_URL`, `APP_KEY` | Runtime mode, error display, backend URL, and Laravel encryption/signing key. Use `APP_ENV=production`, `APP_DEBUG=false`, HTTPS `APP_URL`, and a stable private key in production. |
 | `FRONTEND_URL` | Exact frontend origin allowed by credentialed CORS; for local use `http://localhost:3000`. |
 | `TRUSTED_PROXIES` | Comma-separated proxy IPs/CIDRs. Configure only the actual TLS-terminating proxy addresses; leave empty when there is no proxy. |
-| `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SCHEMA`, `DB_SSLMODE` | PostgreSQL/Supabase connection. Use values from the Supabase Connect panel and its recommended migration-compatible connection. Keep these only in backend `.env`. |
+| `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SCHEMA`, `DB_SSLMODE` | PostgreSQL/Supabase connection. The supplied non-secret settings target this project's `aws-0-ap-northeast-1.pooler.supabase.com:5432` endpoint and `public` schema; enter the database password only in backend `.env` or the host's secret manager. |
 | `SESSION_DRIVER`, `SESSION_ENCRYPT`, `SESSION_LIFETIME`, `SESSION_DOMAIN`, `SESSION_SECURE_COOKIE`, `SESSION_HTTP_ONLY`, `SESSION_SAME_SITE` | Server-side session and cookie controls. Keep session encryption on. Production encryption, HttpOnly, and Secure are forced. If the frontend and API are on different sites, use HTTPS and `SESSION_SAME_SITE=none`. Keep `SESSION_DOMAIN` unset by default; JSON CSRF-token delivery means a broad shared cookie domain is not required. |
 | `CACHE_STORE`, `QUEUE_CONNECTION` | Laravel cache and queue backend. The example uses database-backed services, so their migrations must be applied. |
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Password-reset email delivery. `MAIL_MAILER=log` is for local development and does not send email. |
 | `OPENWEATHERMAP_API_KEY` | Server-only key for weather lookups. Obtain it from OpenWeatherMap; never prefix it with `NEXT_PUBLIC_`. |
 | `MAPS_USER_AGENT` | Identifies the app to OpenStreetMap Nominatim and must include a real contact email, for example `SystemIntegrationRemediation/1.0 (contact: you@example.com)`. No browser map key is used. |
 
-There is no Supabase SDK or Supabase browser client in this application: Laravel connects directly to Supabase's PostgreSQL endpoint. Do not add a service-role key to frontend configuration.
+There is no Supabase SDK or Supabase browser client in this application: Laravel connects directly to Supabase's PostgreSQL endpoint. Do not add a service-role key to frontend configuration. The PHP CLI was verified to load both `pdo_pgsql` and `pgsql`; the Supabase connection itself has not been tested because the password is missing.
 
-The existing local `backend/.env` currently sets `SESSION_ENCRYPT=false`; change it to `true` for local testing as well. Production config forces encrypted sessions, HttpOnly cookies, and Secure cookies regardless of false overrides.
+The local backend `.env` remains ignored by Git. Production config forces encrypted sessions, HttpOnly cookies, and Secure cookies regardless of false overrides.
 
 ## Features and API routes
 
@@ -197,7 +193,7 @@ No deployment has been performed. Vercel access is available, but no Vercel proj
 | GitHub source | Published | <https://github.com/Tep0t/system-integration-remediation> |
 | Frontend (Vercel) | Not deployed | None verified |
 | Backend API | Not deployed | None verified |
-| Database | Supabase is configured as a template only | No live connection verified |
+| Database | Supabase project created; local/template connection values configured | Password missing; no live connection verified |
 
 ### Frontend — Vercel
 
@@ -208,18 +204,18 @@ No deployment has been performed. Vercel access is available, but no Vercel proj
 
 ### Backend — PHP/Laravel host
 
-1. Choose a host that supports Laravel 13, PHP 8.3+, the required PHP extensions (especially `pdo_pgsql`), Composer, HTTPS, and persistent Laravel session/cache storage.
-2. Deploy the `backend/` app with the document root pointed at `backend/public`; install production dependencies with `composer install --no-dev --optimize-autoloader`.
-3. Provide production environment variables securely through the host's secret manager: stable `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, HTTPS `APP_URL`, exact Vercel `FRONTEND_URL`, database, mail, weather, maps User-Agent, session/cache/queue settings, and proxy IPs if applicable.
-4. Set `SESSION_SECURE_COOKIE=true`. If API and frontend are cross-site, also use `SESSION_SAME_SITE=none`. Keep the session cookie host-only unless a reviewed domain design requires otherwise. Confirm session persistence, HTTPS proxy recognition, JSON CSRF-token delivery, and credentialed CORS with the deployed domains.
-5. Configure the host's web process/scheduler/queue only if the chosen provider requires them. Do not expose `.env` or the app's storage directory as public files.
+For the current Render service, create a Docker Web Service from the repository with **Root Directory** `backend`, **Runtime** Docker, **Dockerfile Path** `Dockerfile`, **Docker Command** blank, and **Health Check Path** `/up`. The Dockerfile installs PHP 8.4/Apache and `pdo_pgsql`, installs Composer dependencies from `composer.lock`, builds the Laravel Vite assets from the backend's `package.json`/lockfile, points Apache's document root at `public/`, and binds to Render's assigned `PORT`. It does not run migrations. Full steps and required variables are in [backend/README.md](backend/README.md).
+
+Set the production values securely in Render's service environment: stable `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, HTTPS `APP_URL`, exact Vercel `FRONTEND_URL`, `TRUSTED_PROXIES=REMOTE_ADDR` (trust the immediate Render proxy peer, not arbitrary forwarded headers), Supabase `DB_*` values, and session/cache/mail/weather/maps settings. Set `SESSION_SECURE_COOKIE=true`; for cross-site Vercel/API domains set `SESSION_SAME_SITE=none`. Keep `SESSION_DOMAIN` unset unless you have reviewed a deliberate shared-domain design. Do not expose `.env` or storage files publicly.
+
+Do not run migrations during build or startup. After verifying/approving the Supabase target and credentials, run `php artisan migrate --force` once as a controlled release operation. Test `/up`, CORS/CSRF, and authenticated access after deployment.
 
 ### Database — Supabase PostgreSQL
 
-1. Create/select a Supabase project and use the Supabase Connect panel to choose a connection suitable for Laravel migrations and persistent sessions.
-2. Set `DB_CONNECTION=pgsql`, host, port, database, username, password, schema, and TLS mode in the backend host's secret configuration. Ensure PHP's `pdo_pgsql` is enabled.
+1. Use the existing Supabase project and its Connect panel to confirm the connection details for Laravel migrations and persistent sessions.
+2. Set `DB_CONNECTION=pgsql`, host, port, database, username, password, schema, and TLS mode in the backend host's secret configuration. Use the values for this project in `backend/.env.example` and enter the actual password only in the secret manager. Ensure PHP's `pdo_pgsql` is enabled. Test the connection without applying migrations first.
 3. Back up/confirm the target and run `php artisan migrate --force` only against the intended production database during a planned release. Never use `migrate:fresh` on production.
-4. Check the resulting schema and run a real login/session flow before launch. This project has not connected to Supabase.
+4. After an approved migration, check the resulting schema and run a real login/session flow before launch. The Supabase project is created, but this application has not yet connected to it or migrated it.
 
 Obtain SMTP credentials and an OpenWeatherMap key from their providers; set the Nominatim contact address in `MAPS_USER_AGENT`. Do not paste secrets into this README, Git, screenshots, or chat.
 
@@ -252,7 +248,8 @@ Explain these code areas during the demo: authentication and CSRF/session endpoi
 - **Complete locally:** Laravel/Next.js code, session/CSRF authentication, password recovery implementation, TOTP MFA and recovery codes, weather/maps server endpoints and UI, security checks, migration definitions, environment templates, documentation, automated test/build/lint checks, and a local registration/login/logout browser smoke test.
 - **Complete:** project source published to GitHub; local backend/frontend checks and local authentication smoke test passed.
 - **Partially complete:** deployment configuration and demo preparation; instructions are ready, but no frontend/backend hosting project is linked or deployed. The Vercel account has other projects but none for this app; no PHP backend host is selected or authenticated.
-- **Blocked pending credentials/account access:** Supabase PostgreSQL connection and production migration, SMTP email delivery, OpenWeatherMap live data, and provider-backed browser testing.
+- **Partially complete:** Supabase project exists and non-secret PostgreSQL settings are configured locally and in the backend example; the local `DB_PASSWORD` is blank, so connection testing and migration are pending.
+- **Blocked pending credentials/account access:** Supabase connectivity/migration until the database password is entered and the target is approved; SMTP email delivery, OpenWeatherMap live data, hosting project/host selection, and provider-backed browser testing.
 - **Still needs manual verification:** production DNS/HTTPS, trusted proxy addresses, cross-site cookie/CORS behavior on the actual deployment domains, production session/cache setup, recovery email delivery, MFA enrollment/challenge/recovery in a browser, weather/maps with real providers and location permission, review/remediation of high-severity development dependency findings, and end-to-end demo on deployed services. No verified frontend or backend deployment URL is available yet.
 
 Do not deploy or claim live integration until the blocked checks above have been completed.
