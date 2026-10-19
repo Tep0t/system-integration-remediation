@@ -63,7 +63,7 @@ RUN chmod 755 /usr/local/bin/render-entrypoint
 
 EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD-SHELL curl --fail --silent --header 'X-Forwarded-Proto: https' "http://127.0.0.1:${PORT}/up" || exit 1
+    CMD curl --fail --silent --header 'X-Forwarded-Proto: https' "http://127.0.0.1:${PORT}/up" || exit 1
 
 ENTRYPOINT ["render-entrypoint"]
 CMD ["apache2-foreground"]
