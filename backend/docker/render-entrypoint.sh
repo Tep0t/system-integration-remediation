@@ -17,4 +17,11 @@ fi
 sed -i "s/^Listen 80$/Listen ${port}/" /etc/apache2/ports.conf
 sed -i "s|<VirtualHost \\*:10000>|<VirtualHost *:${port}>|" /etc/apache2/sites-available/000-default.conf
 
+printf '%s\n' 'Running Laravel database migrations...'
+if ! php artisan migrate --force; then
+    printf '%s\n' 'Laravel database migrations failed; Apache will not start.' >&2
+    exit 1
+fi
+
+printf '%s\n' 'Laravel database migrations completed.'
 exec "$@"
