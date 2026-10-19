@@ -42,19 +42,21 @@ COPY . .
 COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 COPY --from=assets /app/public/build ./public/build
 
-RUN composer install \
+RUN mkdir -p \
+        bootstrap/cache \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+    && chown -R www-data:www-data bootstrap/cache storage \
+    && chmod -R ug+rwX bootstrap/cache storage \
+    && composer install \
         --no-dev \
         --no-interaction \
         --no-scripts \
         --prefer-dist \
         --optimize-autoloader \
     && php artisan package:discover --ansi \
-    && mkdir -p \
-        bootstrap/cache \
-        storage/framework/cache/data \
-        storage/framework/sessions \
-        storage/framework/views \
-        storage/logs \
     && chown -R www-data:www-data bootstrap/cache storage \
     && chmod -R ug+rwX bootstrap/cache storage
 
